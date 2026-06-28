@@ -4,46 +4,50 @@
 using namespace std;
 
 // ==========================================
-// 1. (Product)
+// 1. CLASSE PRODUCT
 // ==========================================
 class Product {
 private:
     int id;
     string name;
     int quantity;
+
 public:
     Product(int i, string n, int q) : id(i), name(n), quantity(q) {}
+    
     int getId() { return id; }
     string getName() { return name; }
     int getQuantity() { return quantity; }
-    void setQuantity(int q) { quantity = q; } 
+    void setQuantity(int q) { quantity = q; }
     
-    void display() {
-        cout << "ID: " << id << " | Produit: " << name << " | Stock: " << quantity << endl;
+    void displayJSON() {
+        cout << "{\"id\":" << id << ",\"name\":\"" << name << "\",\"quantity\":" << quantity << "}";
     }
 };
 
 // ==========================================
-// 2. (Commande)
+// 2. CLASSE COMMANDE
 // ==========================================
 class Commande {
 private:
     int id;
     string nomClient;
     string nomProduit;
+
 public:
     Commande(int i, string client, string produit) : id(i), nomClient(client), nomProduit(produit) {}
+    
     int getId() { return id; }
     string getNomClient() { return nomClient; }
     string getNomProduit() { return nomProduit; }
     
-    void afficher() {
-        cout << "No Commande: " << id << " | Client: " << nomClient << " | Demande: " << nomProduit << endl;
+    void afficherJSON() {
+        cout << "{\"id\":" << id << ",\"client\":\"" << nomClient << "\",\"produit\":\"" << nomProduit << "\"}";
     }
 };
 
 // ==========================================
-// 3. (FileAttente)
+// 3. FILE D'ATTENTE (Queue)
 // ==========================================
 class FileAttente {
 private:
@@ -52,19 +56,16 @@ private:
         struct cellule* suiv;
     };
     typedef struct cellule* liste;
-
     liste tete;  
     liste queue; 
 
 public:
     FileAttente() : tete(nullptr), queue(nullptr) {}
 
-    
     void enfiler(Commande* nouvelleCmd) {
         liste nouvelleCellule = new struct cellule;
         nouvelleCellule->cmd = nouvelleCmd;
         nouvelleCellule->suiv = nullptr;
-
         if (queue == nullptr) {
             tete = queue = nouvelleCellule;
             return;
@@ -73,13 +74,8 @@ public:
         queue = nouvelleCellule;
     }
 
-    // permet d'obtenir la commande en tête de la file sans la supprimer
-       Commande* obtenirPremier() {
-        if (tete == nullptr) return nullptr;
-        return tete->cmd;
-    }
+    Commande* obtenirPremier() { return tete == nullptr ? nullptr : tete->cmd; }
 
-    // permet de retirer la commande en tête de la file
     void defiler() {
         if (tete == nullptr) return;
         liste temp = tete;
@@ -88,23 +84,20 @@ public:
         delete temp;
     }
 
-    void afficherFile() {
-        if (tete == nullptr) {
-            cout << "Aucune commande en attente." << endl;
-            return;
-        }
+    void afficherFileJSON() {
+        cout << "[";
         liste courant = tete;
-        cout << "\n--- FILE D'ATTENTE DES COMMANDES ---" << endl;
         while (courant != nullptr) {
-            courant->cmd->afficher();
+            courant->cmd->afficherJSON();
             courant = courant->suiv;
+            if (courant != nullptr) cout << ",";
         }
-        cout << "------------------------------------" << endl;
+        cout << "]";
     }
 };
 
 // ==========================================
-// 4. (StockTree) 
+// 4. ARBRE DE RECHERCHE (ABR)
 // ==========================================
 class StockTree {
 private:
@@ -114,7 +107,6 @@ private:
         struct noeud* droite;
     };
     typedef struct noeud* arbre;
-    
     arbre racine;
 
     arbre insererRec(arbre node, Product* p) {
@@ -129,23 +121,21 @@ private:
         return node;
     }
 
-    // chercher un produit par son nom dans l'arbre de manière récursive
     Product* rechercherParNomRec(arbre node, string nom) {
         if (node == nullptr) return nullptr;
         if (node->prod->getName() == nom) return node->prod;
-        
-        // recherche selon le principe de parcours infixe ABR
         Product* resGauche = rechercherParNomRec(node->gauche, nom);
         if (resGauche != nullptr) return resGauche;
-        
         return rechercherParNomRec(node->droite, nom);
     }
 
-    void afficherInfixe(arbre node) {
+    void afficherInfixeJSON(arbre node, bool &premier) {
         if (node != nullptr) {
-            afficherInfixe(node->gauche);
-            node->prod->display();
-            afficherInfixe(node->droite);
+            afficherInfixeJSON(node->gauche, premier);
+            if (!premier) cout << ",";
+            node->prod->displayJSON();
+            premier = false;
+            afficherInfixeJSON(node->droite, premier);
         }
     }
 
@@ -153,62 +143,58 @@ public:
     StockTree() : racine(nullptr) {}
 
     void ajouterProduit(Product* p) { racine = insererRec(racine, p); }
-    
     Product* rechercherProduitParNom(string nom) { return rechercherParNomRec(racine, nom); }
 
-    void afficherStock() {
-        if (racine == nullptr) { cout << "Stock vide." << endl; return; }
-        cout << "\n--- ETAT DU STOCK (ABR) ---" << endl;
-        afficherInfixe(racine);
-        cout << "----------------------------" << endl;
+    void afficherStockJSON() {
+        cout << "[";
+        bool premier = true;
+        afficherInfixeJSON(racine, premier);
+        cout << "]";
     }
 };
 
 // ==========================================
-// 5. LE MAIN 
+// 5. FONCTION PRINCIPALE (MAIN)
 // ==========================================
-int main() {
-    cout << "===== SMART STOCK MANAGER : INTEGRATION SYSTEM =====" << endl;
-
-    // 1. Initialisation du Stock (ABR)
+int main(int argc, char* argv[]) {
     StockTree gestionStock;
-    gestionStock.ajouterProduit(new Product(105, "MacBook Air", 5));
-    gestionStock.ajouterProduit(new Product(101, "iPhone 13", 2));
-
-    cout << "\n---  Affichage du stock initial ---" << endl;
-    gestionStock.afficherStock();
-
-    // 2. Initialisation de la File d'attente (Queue)
     FileAttente fileCommandes;
+
+    gestionStock.ajouterProduit(new Product(101, "iPhone 13", 3));
+    gestionStock.ajouterProduit(new Product(105, "MacBook Air", 5));
+    gestionStock.ajouterProduit(new Product(108, "iPad Pro", 2));
+
     fileCommandes.enfiler(new Commande(1, "Malak", "MacBook Air"));
     fileCommandes.enfiler(new Commande(2, "Anas", "iPhone 13"));
 
-    cout << "\n---  Affichage des clients dans la file ---" << endl;
-    fileCommandes.afficherFile();
-
-    // 3. Traitement de la première commande (Interconnexion File <-> ABR)
-    cout << "\n---  Traitement de la premiere commande ---" << endl;
-    Commande* cmdEnCours = fileCommandes.obtenirPremier();
-    
-    if (cmdEnCours != nullptr) {
-        // Recherche du produit demandé dans l'arbre de stock
-        Product* prodEnStock = gestionStock.rechercherProduitParNom(cmdEnCours->getNomProduit());
-        
-        if (prodEnStock != nullptr && prodEnStock->getQuantity() > 0) {
-            cout << "-> Succes: Le produit " << prodEnStock->getName() << " est disponible !" << endl;
-            // Décrémentation du stock
-            prodEnStock->setQuantity(prodEnStock->getQuantity() - 1);
-            cout << "-> Stock mis a jour pour " << prodEnStock->getName() << endl;
-            
-            // Retirer le client de la file car il a été servi
-            fileCommandes.defiler();
+    if (argc > 1) {
+        string action = argv[1];
+        if (action == "get_stock") {
+            gestionStock.afficherStockJSON();
+        } else if (action == "get_orders") {
+            fileCommandes.afficherFileJSON();
+        } else if (action == "process") {
+            Commande* cmd = fileCommandes.obtenirPremier();
+            if (cmd != nullptr) {
+                Product* prod = gestionStock.rechercherProduitParNom(cmd->getNomProduit());
+                if (prod != nullptr && prod->getQuantity() > 0) {
+                    prod->setQuantity(prod->getQuantity() - 1);
+                    fileCommandes.defiler();
+                    cout << "{\"status\":\"success\",\"message\":\"Commande traitee avec succes\"}";
+                } else {
+                    cout << "{\"status\":\"error\",\"message\":\"Produit en rupture de stock\"}";
+                }
+            } else {
+                cout << "{\"status\":\"error\",\"message\":\"Aucune commande dans la file\"}";
+            }
         }
+    } else {
+        cout << "{\"stock\":";
+        gestionStock.afficherStockJSON();
+        cout << ",\"orders\":";
+        fileCommandes.afficherFileJSON();
+        cout << "}";
     }
-
-    // 4. Vérification finale
-    cout << "\n--- [Etape 4] Verification finale du Stock et de la File ---" << endl;
-    gestionStock.afficherStock(); 
-    fileCommandes.afficherFile();  
 
     return 0;
 }

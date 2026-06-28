@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Stock Manager — Dashboard Enterprise</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <nav class="global-nav">
+        <div class="nav-container">
+            <span class="nav-logo">📦 Smart Stock Manager</span>
+            <span class="nav-status">Système Temps Réel Core C++</span>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        
+        <div class="left-column">
+            <section class="premium-card">
+                <h2>➕ Enregistrer une Commande</h2>
+                <form id="order-form">
+                    <div class="input-group">
+                        <label>Nom du Client</label>
+                        <input type="text" id="client-name" placeholder="Ex: Malak" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Produit Demandé</label>
+                        <select id="product-name" required>
+                            <option value="iPhone 13">iPhone 13</option>
+                            <option value="MacBook Air">MacBook Air</option>
+                            <option value="iPad Pro">iPad Pro</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="premium-btn primary">Ajouter à la File FIFO</button>
+                </form>
+            </section>
+
+            <section class="premium-card">
+                <h2>📊 État du Stock (Arbre ABR)</h2>
+                <div id="stock-list" class="stock-grid">
+                </div>
+            </section>
+        </div>
+
+        <div class="right-column">
+            <section class="premium-card queue-card">
+                <h2>🛒 File d'attente des Commandes (FIFO)</h2>
+                <div id="order-list" class="queue-flex">
+                </div>
+                <button id="btn-process" class="premium-btn success-btn">⚙️ Traiter la commande prioritaire</button>
+            </section>
+        </div>
+
+    </main>
+
+    <div id="notification" class="hidden"></div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
